@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "currency": "USD",
+  "effectiveDate": "2026-11-18",
+  "lastVerifiedDate": "2026-11-18",
+  "source": "https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/",
+  "models": [
+    {
+      "model": "gpt-5-mini",
+      "deploymentPattern": "gpt-5-mini",
+      "inputPerMillionTokens": 0.25,
+      "cachedInputPerMillionTokens": 0.025,
+      "outputPerMillionTokens": 2.0,
+      "status": "example-rate-requires-customer-verification"
+    }
+  ]
+}

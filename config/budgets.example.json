@@ -1,0 +1,9 @@
+{
+  "currency": "USD",
+  "monthlyBudget": 1000,
+  "thresholds": [
+    {"percentage": 70, "severity": "information"},
+    {"percentage": 90, "severity": "warning"},
+    {"percentage": 100, "severity": "critical"}
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "foundry-finops-detail",
+    "title": "Microsoft Foundry FinOps - Detailed AI Usage",
+    "description": "Microsoft Foundry FinOps without API Management.",
+    "tags": [
+      "foundry",
+      "finops",
+      "azure-monitor",
+      "detail"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "team",
+          "label": "Team",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        },
+        {
+          "name": "application",
+          "label": "Application",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        },
+        {
+          "name": "model",
+          "label": "Model",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Detailed AI Usage",
+        "description": "Searchable request-level model usage with exact Azure Monitor drill-through.",
+        "type": "table",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 24,
+          "h": 20
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "EstimatedCost"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "currencyUSD"
+                },
+                {
+                  "id": "decimals",
+                  "value": 5
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "LatencyMs"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "ms"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "TraceId"
+              },
+              "properties": [
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "Open exact trace in Azure Monitor",
+                      "targetBlank": true,
+                      "url": "https://portal.azure.com/#blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/resourceId/${LOG_ANALYTICS_RESOURCE_ID_ENCODED}/source/LogsBlade.AnalyticsShareLinkToQuery/query/AppTraces%20%7C%20where%20tostring(Properties%5B%22traceId%22%5D)%20%3D%3D%20%22${__value.raw}%22%20%7C%20order%20by%20TimeGenerated%20desc/isQueryBase64Compressed/false/timespan/PT24H"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage\n| project TimeGenerated, Team, Application, CostCenter, UserId, Model, Deployment,\n          PromptTokens, CachedPromptTokens, CompletionTokens, TotalTokens,\n          EstimatedCost, Currency, LatencyMs, StatusCode, RequestId, TraceId,\n          OperationId\n| order by TimeGenerated desc\n| take 1000"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}

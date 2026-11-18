@@ -1,0 +1,5 @@
+-r src/cost-normalizer/requirements.txt
+azure-monitor-opentelemetry>=1.6.4,<2
+azure-identity>=1.19.0,<2
+requests>=2.32.0,<3
+pytest>=8.3.0,<9

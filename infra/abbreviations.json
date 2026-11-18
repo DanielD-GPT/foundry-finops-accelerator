@@ -1,0 +1,11 @@
+{
+  "resourcesResourceGroups": "rg-",
+  "cognitiveServicesAccounts": "aif-",
+  "operationalInsightsWorkspaces": "log-",
+  "insightsComponents": "appi-",
+  "dashboardGrafana": "amg-",
+  "storageStorageAccounts": "st",
+  "managedIdentityUserAssignedIdentities": "id-",
+  "webServerFarms": "plan-",
+  "webSitesFunctions": "func-"
+}

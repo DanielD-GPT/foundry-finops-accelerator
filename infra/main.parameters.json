@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "grafanaLocation": {
+      "value": "${GRAFANA_LOCATION=centralus}"
+    },
+    "environmentTier": {
+      "value": "${ENVIRONMENT_TIER=development}"
+    },
+    "existingFoundryName": {
+      "value": "${EXISTING_FOUNDRY_NAME=}"
+    },
+    "existingFoundryResourceGroup": {
+      "value": "${EXISTING_FOUNDRY_RESOURCE_GROUP=}"
+    },
+    "deploySampleModel": {
+      "value": "${DEPLOY_SAMPLE_MODEL=false}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    }
+  }
+}

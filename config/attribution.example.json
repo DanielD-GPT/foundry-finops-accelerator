@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "teams": [
+    {
+      "team": "platform-engineering",
+      "costCenter": "cc-1000",
+      "applications": ["sample-client"],
+      "monthlyBudgetUsd": 1000
+    }
+  ]
+}

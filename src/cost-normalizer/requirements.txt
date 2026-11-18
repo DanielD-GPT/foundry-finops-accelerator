@@ -1,0 +1,5 @@
+# Do not include azure-functions-worker. The platform manages the Python worker.
+azure-functions>=1.21.0,<2
+azure-identity>=1.19.0,<2
+azure-monitor-ingestion>=1.0.4,<2
+azure-storage-blob>=12.24.0,<13

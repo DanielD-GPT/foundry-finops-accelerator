@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foundry-finops-instrumentation"
+version = "1.0.0"
+description = "Microsoft Foundry FinOps telemetry helpers"
+requires-python = ">=3.11"
+dependencies = [
+  "azure-monitor-opentelemetry>=1.6.0,<2"
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3.0,<9"]
+
+[tool.setuptools]
+py-modules = ["foundry_finops"]

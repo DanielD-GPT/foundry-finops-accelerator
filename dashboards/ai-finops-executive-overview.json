@@ -1,0 +1,574 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "foundry-finops-overview",
+    "title": "Microsoft Foundry FinOps - Executive Overview",
+    "description": "Microsoft Foundry FinOps without API Management.",
+    "tags": [
+      "foundry",
+      "finops",
+      "azure-monitor",
+      "executive"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "team",
+          "label": "Team",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        },
+        {
+          "name": "application",
+          "label": "Application",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        },
+        {
+          "name": "model",
+          "label": "Model",
+          "type": "custom",
+          "query": "All",
+          "current": {
+            "text": "All",
+            "value": "All"
+          },
+          "options": [
+            {
+              "text": "All",
+              "value": "All",
+              "selected": true
+            }
+          ]
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Estimated AI Cost",
+        "description": "Near-real-time token-derived estimate for the selected period.",
+        "type": "stat",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 4
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Actual Billed AI Cost",
+        "description": "Authoritative Cost Management data; normal Azure billing latency applies.",
+        "type": "stat",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "AIFinOpsCost_CL | where $__timeFilter(TimeGenerated) | summarize ActualCost=sum(ActualCost)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Monthly Budget Used",
+        "description": "Estimated spend divided by the configured monthly dashboard budget.",
+        "type": "gauge",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost) | extend Budget=1000.0 | project PercentUsed=100.0*EstimatedCost/Budget"
+            }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Total Model Requests",
+        "description": "Instrumented direct-to-Foundry requests.",
+        "type": "stat",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize Requests=count()"
+            }
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Total Tokens Consumed",
+        "description": "Prompt and completion tokens reported by model responses.",
+        "type": "stat",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 16,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize Tokens=sum(TotalTokens)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Average Model Response Time",
+        "description": "End-to-end response time measured by calling applications.",
+        "type": "stat",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 20,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize AverageLatency=avg(LatencyMs)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "AI Cost Over Time",
+        "description": "Estimated cost trend from token telemetry.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 4,
+          "w": 12,
+          "h": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 4
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "time_series",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost) by bin(TimeGenerated, 15m)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Token Consumption Over Time",
+        "description": "Total token consumption over time.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 4,
+          "w": 12,
+          "h": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "time_series",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize Tokens=sum(TotalTokens) by bin(TimeGenerated, 15m)"
+            }
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Cost by Model",
+        "description": "Compare estimated cost across model families.",
+        "type": "barchart",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 4
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost) by Model | order by EstimatedCost desc"
+            }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Cost by Team",
+        "description": "Allocate estimated AI cost to business teams.",
+        "type": "barchart",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 8,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 4
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost) by Team | order by EstimatedCost desc"
+            }
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Cost by Application",
+        "description": "Identify applications driving AI spend.",
+        "type": "barchart",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 16,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "decimals": 4
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage = AppTraces\n| where $__timeFilter(TimeGenerated)\n| where Message == \"ai.finops.usage\"\n| extend Team=tostring(Properties[\"team\"]),\n         Application=tostring(Properties[\"application\"]),\n         CostCenter=tostring(Properties[\"costCenter\"]),\n         Environment=tostring(Properties[\"environment\"]),\n         UserId=tostring(Properties[\"userId\"]),\n         FoundryResource=tostring(Properties[\"foundryResource\"]),\n         Deployment=tostring(Properties[\"deployment\"]),\n         Model=tostring(Properties[\"model\"]),\n         RequestId=tostring(Properties[\"requestId\"]),\n         TraceId=tostring(Properties[\"traceId\"]),\n         StatusCode=toint(Properties[\"statusCode\"]),\n         Success=tobool(Properties[\"success\"]),\n         PromptTokens=tolong(Properties[\"promptTokens\"]),\n         CachedPromptTokens=tolong(Properties[\"cachedPromptTokens\"]),\n         CompletionTokens=tolong(Properties[\"completionTokens\"]),\n         TotalTokens=tolong(Properties[\"totalTokens\"]),\n         LatencyMs=todouble(Properties[\"latencyMs\"]),\n         EstimatedCost=todouble(Properties[\"estimatedTotalCost\"]),\n         Currency=tostring(Properties[\"currency\"]),\n         PricingEffectiveDate=tostring(Properties[\"pricingEffectiveDate\"])\n| where (\"$team\" == \"All\" or Team == \"$team\")\n  and (\"$application\" == \"All\" or Application == \"$application\")\n  and (\"$model\" == \"All\" or Model == \"$model\");\nusage | summarize EstimatedCost=sum(EstimatedCost) by Application | order by EstimatedCost desc"
+            }
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Data Freshness",
+        "description": "Shows the newest operational and authoritative cost records.",
+        "type": "table",
+        "datasource": {
+          "type": "grafana-azure-monitor-datasource",
+          "uid": "azure-monitor-oob"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 20,
+          "w": 24,
+          "h": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "No traffic in this period",
+            "color": {
+              "mode": "palette-classic"
+            }
+          },
+          "overrides": []
+        },
+        "options": {},
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "Azure Log Analytics",
+            "azureLogAnalytics": {
+              "resources": [
+                "${LOG_ANALYTICS_RESOURCE_ID}"
+              ],
+              "resultFormat": "table",
+              "query": "let usage=AppTraces | where $__timeFilter(TimeGenerated) | where Message==\"ai.finops.usage\" | summarize LastOperational=max(TimeGenerated); let cost=AIFinOpsCost_CL | where $__timeFilter(TimeGenerated) | summarize LastBilled=max(TimeGenerated); usage | extend Key=1 | join kind=fullouter (cost | extend Key=1) on Key | project LastOperational, LastBilled, BillingNote=\"Actual billing data is delayed by Azure Cost Management.\""
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}

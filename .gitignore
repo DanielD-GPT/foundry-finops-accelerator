@@ -1,0 +1,16 @@
+.azure/
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+dist/
+bin/
+obj/
+coverage/
+*.user
+*.suo
+local.settings.json
+dashboard-import-results.json
+infra/main.json
